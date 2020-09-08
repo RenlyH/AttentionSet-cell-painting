@@ -1,12 +1,13 @@
-import pandas as pd
 import os
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import LeaveOneOut
-from sklearn.metrics import confusion_matrix
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.pyplot as plt 
+import pandas as pd
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.model_selection import LeaveOneOut
+from sklearn.neighbors import KNeighborsClassifier
 
 os.chdir("/home/user/michigan/data/Ljosa-BBBC021/database")
 
