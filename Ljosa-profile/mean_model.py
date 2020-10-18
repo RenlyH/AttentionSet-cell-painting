@@ -1,3 +1,5 @@
+# Used to reproduce Ljosa's work with the data they provided.
+
 import os
 
 import matplotlib.pyplot as plt
