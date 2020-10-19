@@ -1,4 +1,11 @@
+from tqdm import tqdm
+
+import pandas as pd
+import numpy as np
 from data_loader import generate_data_set, data_label_split
+
+from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import LabelEncoder
 
 def mini_noise_signal_cv(size, data, treatment, control, model, cv, verbose):
     mean_mean_accuracy=[]
@@ -7,12 +14,13 @@ def mini_noise_signal_cv(size, data, treatment, control, model, cv, verbose):
     std_z_score_control=[]
     mean_z_score_treatment=[]
     std_z_score_treatment=[]
-    for i in range(5,96,5):
+    for i in tqdm(range(5,96,5)):
         mini_batch = generate_data_set(size, i/100, data, treatment, control)
         X, y = data_label_split(mini_batch)
-#         y = y["compound"]
-#         lb = LabelEncoder()
-#         y_true = lb.fit_transform(y['compound']) # 0 for DMSO, 1 for taxol
+
+        # encode string class into numerical class, 0 for control, 1 for treatment
+        y = y["compound"]#.map({treatment:1, control:0})
+    
         mean_accuracy, z_score_control, z_score_treatment = z_score(cv, X, y, model,"DMSO", "taxol", verbose = verbose)
         mean_mean_accuracy.append(np.mean(mean_accuracy))
         std_mean_accuracy.append(np.std(mean_accuracy))
@@ -20,7 +28,7 @@ def mini_noise_signal_cv(size, data, treatment, control, model, cv, verbose):
         std_z_score_control.append(np.std(z_score_control))
         mean_z_score_treatment.append(np.mean(z_score_treatment))
         std_z_score_treatment.append(np.std(z_score_treatment))
-    return mean_mean_accuracy, std_mean_accuracy, mean_z_score_control, std_z_score_control, mean_z_score_treatment, std_z_score_treatment
+    return (mean_mean_accuracy, std_mean_accuracy, mean_z_score_control, std_z_score_control, mean_z_score_treatment, std_z_score_treatment)
 
 
 
