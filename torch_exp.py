@@ -1,6 +1,6 @@
 import pandas as pd 
 import numpy as np
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 
 from sklearn.model_selection import StratifiedKFold
 
@@ -13,6 +13,8 @@ from torch.autograd import Variable
 from data_loader import data_label_split
 from data_loader import generate_data_set
 from data_loader import dmso_taxol_ProfileBag
+
+import multiprocessing as mp
 
 def train(epoch, loader, model, opt):
     model.train()

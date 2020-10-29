@@ -18,20 +18,26 @@ def data_label_split(data:pandas.DataFrame) -> pandas.DataFrame:
     return train, label
     
 '''
-Generate sample data with specifed percent of PC & NC
+Generate sample data with specifed percent of PC & NC. "perc" is the percentage of positive instance in the postive bag. To train the model, we treat all instances within positive bag positive no matter where they originally from.
 '''
-def generate_data_set(size:int, perc:float, data:pandas.DataFrame, treatment:str, control:str) -> pandas.DataFrame:
+def generate_data_set(size:int, perc:float, data:pandas.DataFrame, treatment:str, control:str, bag_perc:float=0.5) -> pandas.DataFrame:
     treatment_data = data[data["compound"] == treatment]
     control_data = data[data["compound"] == control]
-    num_treat = int(size * perc)
-    return treatment_data.sample(num_treat).append(control_data.sample(size - num_treat)).sample(frac = 1).reset_index(drop=True)
+    num_treat = int(size * perc * bag_perc)
+    num_modified = int(size * (1-perc) * bag_perc)
+    flag = treatment_data.shape[0]<num_treat
+    treatment_data = treatment_data.sample(num_treat, replace = flag)
+    flag = control_data.shape[0]<(size - num_treat)
+    control_data = control_data.sample(size - num_treat,replace = flag).reset_index(drop = True)
+    control_data.loc[0:num_modified-1,("compound")] = treatment
+#     return treatment_data, control_data
+    return treatment_data.append(control_data).sample(frac = 1).reset_index(drop=True)
 
 # takes the df with "compound" columns
 class dmso_taxol_ProfileBag(D.Dataset):
-    def __init__(self, df:pandas.DataFrame, size:int, bag_mean_size, bag_std_size, perc:float, treatment:str, control:str, merged_perc:float):
+    def __init__(self, df:pandas.DataFrame, size:int, bag_mean_size, bag_std_size, perc:float, treatment:str, control:str, merged_perc:float=0.5):
         self.df = df
         self.size = size
-        merged_perc = 0.5
         self.merged_pos_size = int(size * merged_perc)
         self.unmerged_neg_size = int(size * (1 - merged_perc))
         
