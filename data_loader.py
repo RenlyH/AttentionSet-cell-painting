@@ -2,6 +2,7 @@ import pandas
 import torch
 import torch.utils.data as D 
 import numpy as np
+from sklearn.preprocessing import normalize
 
 '''
 Given pandas.DataFrame type data with rows as individual cells and columns as features.
@@ -16,7 +17,7 @@ def data_label_split(data:pandas.DataFrame) -> pandas.DataFrame:
     label = data[["compound"]]
     train = data.drop(drop_list, axis = 1)
     return train, label
-    
+
 '''
 Generate sample data with specifed percent of PC & NC. "perc" is the percentage of positive instance in the postive bag. To train the model, we treat all instances within positive bag positive no matter where they originally from.
 '''
@@ -33,7 +34,9 @@ def generate_data_set(size:int, perc:float, data:pandas.DataFrame, treatment:str
 #     return treatment_data, control_data
     return treatment_data.append(control_data).sample(frac = 1).reset_index(drop=True)
 
-# takes the df with "compound" columns
+'''
+Sampling instance and form a bag from the pandas dataframe
+'''
 class dmso_taxol_ProfileBag(D.Dataset):
     def __init__(self, df:pandas.DataFrame, size:int, bag_mean_size, bag_std_size, perc:float, treatment:str, control:str, merged_perc:float=0.5):
         self.df = df
@@ -53,6 +56,9 @@ class dmso_taxol_ProfileBag(D.Dataset):
         self.control_data = self.df[self.df["compound"] == self.control]
         self.treatment_size = (self.bag_size * self.perc).astype(int)
         self.control_size = self.bag_size - self.treatment_size
+        self.treatment_replace = len(self.treatment_data) < np.sum(self.treatment_size)
+        self.control_replace = len(self.control_data) < np.sum(self.control_size)
+        self.treat_index_list, self.control_index_list= self._get_sampling_index()
         
     def _get_sampling_index(self):
         treat_index_list = []
@@ -65,7 +71,7 @@ class dmso_taxol_ProfileBag(D.Dataset):
         for i in range(self.merged_pos_size):
             if len(index) < self.treatment_size[i]:
                 index = np.arange(treat_length)
-            z = np.random.choice(index, self.treatment_size[i], replace=False)
+            z = np.random.choice(index, self.treatment_size[i], replace=self.treatment_replace)
             index = index[~np.isin(index, z)]
             treat_index_list.append(z)
 
@@ -73,7 +79,7 @@ class dmso_taxol_ProfileBag(D.Dataset):
         for i in range(self.merged_pos_size):
             if len(index) < self.control_size[i]:
                 index = np.arange(control_length)
-            z = np.random.choice(index, self.control_size[i], replace=False)
+            z = np.random.choice(index, self.control_size[i], replace=self.control_replace )
             index = index[~np.isin(index, z)]
             control_index_list.append(z)
         return treat_index_list, control_index_list
@@ -81,8 +87,7 @@ class dmso_taxol_ProfileBag(D.Dataset):
         
     def __getitem__(self, index):
         if index < self.merged_pos_size:
-            treat_index_list, control_index_list= self._get_sampling_index()
-            merged_data = self.treatment_data.iloc[treat_index_list[index]].append(self.control_data.iloc[control_index_list[index]]) 
+            merged_data = self.treatment_data.iloc[self.treat_index_list[index]].append(self.control_data.iloc[self.control_index_list[index]]) 
             X, y = data_label_split(merged_data.sample(frac=1))
             return torch.from_numpy(X.values), [torch.tensor([1.0]), list(y["compound"])]
         else:
@@ -95,3 +100,7 @@ class dmso_taxol_ProfileBag(D.Dataset):
     
     
     
+def data_normalization(data:pandas.DataFrame)->pandas.DataFrame:
+    X,y=data_label_split(data)
+    return pandas.concat([pandas.DataFrame(normalize(X), columns = X.columns), y.reset_index(drop=True)], axis=1, sort = False )
+

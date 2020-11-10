@@ -84,22 +84,23 @@ def train(size, data, model, verbose, bag_perc = 0.5):
     z_score = 1-3*(std_pred_score_control+std_pred_score_treatment)/(np.abs(mean_pred_score_control-mean_pred_score_treatment))
     
     model_name = str(model).split("(")[0]
-    feature_size = len(data.columns)
+    feature_size = len(data_label_split(data)[0].columns)
     
-    fig=plt.figure()
+    plt.figure(figsize=(14, 5))
+    ax = plt.subplot(1,2,1)
     plt.plot([i/100 for i in range(5,96,5)], mean_accuracy, '-')
     plt.fill_between([i/100 for i in range(5,96,5)], 
                      (mean_accuracy)-std_accuracy, mean_accuracy+std_accuracy, alpha=0.2)
-    plt.title("Accuracy score of %s, %s cells, %s features"%(model_name, size, feature_size))
-    
+    ax.set_title("Accuracy score of %s, %s cells, %s features"%(model_name, 500, feature_size))
 
-    plt.savefig("Accuracy_%s_sample%s_feature%s.png" %(model_name, size, feature_size))
-    plt.close()
-    
-    fig=plt.figure()
+    ax = plt.subplot(1,2,2)
     plt.plot([i/100 for i in range(5,96,5)], z_score, '-')
-    plt.title("Z_score of %s, %s cells, %s features"%(model_name, size, feature_size))
-    plt.savefig("Z_score_%s_sample%s_feature%s.png" %(model_name, size, feature_size))
+    ax.set_title("Z_score of %s, %s cells, %s features"%(model_name, 500, feature_size))
+
+    plt.savefig("%s_sample%s_feature%s.png" %(model_name, size, feature_size))
+
+
+
     
 if __name__=='__main__':
     drop_NA_data=pd.read_csv("moa_data_drop_NA.csv", index_col=0)

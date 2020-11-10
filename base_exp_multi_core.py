@@ -54,7 +54,7 @@ def z_score(perc, size, splits, data, model, control = 0, treatment = 1, verbose
     pred_score_treatment = np.array([])
     mean_accuracy = []
     if type(X) == np.ndarray:
-        for i, (train_index, test_index) in enumerate(skf.split(X, y)):
+        for i, (train_index, test_index) in tqdm(enumerate(skf.split(X, y)), desc = "K fold CV"):
             if verbose != 0:
                 print("Fold %d" % i, "TRAIN:", train_index , "TEST:", test_index)
             X_train, X_test = X[train_index], X[test_index]
@@ -65,7 +65,7 @@ def z_score(perc, size, splits, data, model, control = 0, treatment = 1, verbose
             mean_accuracy.append(lgs.score(X_test, y_test))
 #         print(y_test, lgs.predict_proba(X_test[y_test==0])[:,0], lgs.predict_proba(X_test[y_test==1])[:,1])
     elif type(X) == pd.core.frame.DataFrame:
-         for i, (train_index, test_index) in enumerate(skf.split(X, y)):
+         for i, (train_index, test_index) in tqdm(enumerate(skf.split(X, y)), desc = "K fold CV"):
             if verbose != 0:
                 print("Fold %d" % i, "TRAIN:", train_index , "TEST:", test_index)
             X_train, X_test = X.iloc[train_index], X.iloc[test_index]
@@ -74,7 +74,9 @@ def z_score(perc, size, splits, data, model, control = 0, treatment = 1, verbose
             pred_score_control = np.append(pred_score_control, lgs.predict_proba(X_test[y_test=="DMSO"])[:,1])
             pred_score_treatment = np.append(pred_score_treatment, lgs.predict_proba(X_test[y_test=="taxol"])[:,1])
             mean_accuracy.append(lgs.score(X_test, y_test))
-    return {perc: [np.mean(mean_accuracy),np.std(mean_accuracy),np.mean(pred_score_control), np.std(pred_score_control), np.mean(pred_score_treatment),np.std(pred_score_treatment)]}
+    return {perc: [np.mean(mean_accuracy), np.std(mean_accuracy),
+                   np.mean(pred_score_control), np.std(pred_score_control), 
+                   np.mean(pred_score_treatment), np.std(pred_score_treatment)]}
 
 
 def train(size, data, model, verbose, bag_perc = 0.5):
@@ -95,20 +97,20 @@ def train(size, data, model, verbose, bag_perc = 0.5):
     model_name = str(model).split("(")[0]
     feature_size = len(data_label_split(data)[0].columns)
     
-    fig=plt.figure()
+    plt.figure(figsize=(14, 5))
+    ax = plt.subplot(1,2,1)
     plt.plot([i/100 for i in range(5,96,5)], mean_accuracy, '-')
     plt.fill_between([i/100 for i in range(5,96,5)], 
                      (mean_accuracy)-std_accuracy, mean_accuracy+std_accuracy, alpha=0.2)
-    plt.title("Accuracy score of %s, %s cells, %s features"%(model_name, size, feature_size))
-    
+    ax.set_title("Accuracy score of %s, %s cells, %s features"%(model_name, 500, feature_size))
 
-    plt.savefig("Accuracy_%s_sample%s_feature%s.png" %(model_name, size, feature_size))
-    plt.close()
-    
-    fig=plt.figure()
+    ax = plt.subplot(1,2,2)
     plt.plot([i/100 for i in range(5,96,5)], z_score, '-')
-    plt.title("Z_score of %s, %s cells, %s features"%(model_name, size, feature_size))
-    plt.savefig("Z_score_%s_sample%s_feature%s.png" %(model_name, size, feature_size))
+    ax.set_title("Z_score of %s, %s cells, %s features"%(model_name, 500, feature_size))
+
+    plt.savefig("%s_sample%s_feature%s.png" %(model_name, size, feature_size))
+
+
     
 if __name__=='__main__':
     drop_NA_data=pd.read_csv("moa_data_drop_NA.csv", index_col=0)
