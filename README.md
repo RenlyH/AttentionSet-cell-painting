@@ -25,7 +25,7 @@ How to Use
 ----------
 `data_loader.py`: Generates training and test set by combining segmented cell images to bags. A bag is given a positive label if it contains one or more images sampled from treatment dataset.
 
-`base_exp.py`: Baseline model 
+`base_exp.py`: Baseline model for noise-signal mixture experiment. 
 
 `main.py`: Trains a small CNN with the Adam optimization algorithm.
 The training takes 20 epochs. Last, the accuracy and loss of the model on the test set is computed.
