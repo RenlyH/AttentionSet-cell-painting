@@ -1,1 +1,1 @@
-# Attention-based-pooling
+# AttentionSet in image-based high-content screening
