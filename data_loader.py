@@ -35,7 +35,7 @@ def generate_data_set(size:int, perc:float, data:pandas.DataFrame, treatment:str
     return treatment_data.append(control_data).sample(frac = 1).reset_index(drop=True)
 
 '''
-Sampling instance and form a bag from the pandas dataframe
+Sampling instance and form a bag from the the meta data (pandas dataframe)
 '''
 class dmso_taxol_ProfileBag(D.Dataset):
     def __init__(self, df:pandas.DataFrame, size:int, bag_mean_size, bag_std_size, perc:float, treatment:str, control:str, merged_perc:float=0.5):
@@ -99,7 +99,9 @@ class dmso_taxol_ProfileBag(D.Dataset):
         return self.size
     
     
-    
+'''
+Normalize cell profiler extracted feature data enabling the convergence of ML model.
+'''
 def data_normalization(data:pandas.DataFrame)->pandas.DataFrame:
     X,y=data_label_split(data)
     return pandas.concat([pandas.DataFrame(normalize(X), columns = X.columns), y.reset_index(drop=True)], axis=1, sort = False )
