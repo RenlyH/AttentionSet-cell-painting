@@ -3,6 +3,7 @@ import torch
 import torch.utils.data as D 
 import numpy as np
 from sklearn.preprocessing import normalize
+from sklearn.preprocessing import StandardScaler
 
 '''
 Given pandas.DataFrame type data with rows as individual cells and columns as features.
@@ -100,9 +101,15 @@ class dmso_taxol_ProfileBag(D.Dataset):
     
     
 '''
-Normalize cell profiler extracted feature data enabling the convergence of ML model.
+Normalize cell profiler extracted feature data enabling the convergence of ML model. Input should be X in a DataFrame format.
 '''
 def data_normalization(data:pandas.DataFrame)->pandas.DataFrame:
-    X,y=data_label_split(data)
-    return pandas.concat([pandas.DataFrame(normalize(X), columns = X.columns), y.reset_index(drop=True)], axis=1, sort = False )
+    return pandas.DataFrame(normalize(X, axis = 1), columns = X.columns, index = data.index)
+
+'''
+Normalize cell profiler extracted feature data enabling the convergence of ML model. Input should be X in a DataFrame format.
+'''
+def data_standardization(data:pandas.DataFrame)->pandas.DataFrame:
+    return pandas.DataFrame(StandardScaler().fit_transform(data), columns = data.columns, index = data.index)
+
 
