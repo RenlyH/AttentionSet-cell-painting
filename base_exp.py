@@ -11,6 +11,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 
 import matplotlib.pyplot as plt
 import multiprocessing as mp
@@ -161,6 +162,6 @@ if __name__=='__main__':
 #     sf_drop_NA_data = drop_NA_data[["compound", "concentration",
 #                                 "moa", "row ID", "Iteration (#2)", "COND",
 #                                "AreaShape_Area_Nuclei"]]
-    model =  MLPClassifier(solver='adam',max_iterint = 1000)#KNeighborsClassifier(30)#LogisticRegression(max_iter = 10000, solver = "saga", n_jobs = -1)# RandomForestClassifier(min_samples_split=50, random_state=0)
+    model =  MLPClassifier(solver='adam',max_iter = 1000)#KNeighborsClassifier(30)#LogisticRegression(max_iter = 10000, solver = "saga", n_jobs = -1)# RandomForestClassifier(min_samples_split=50, random_state=0)
 
     train(50000, drop_NA_data, model, 0)

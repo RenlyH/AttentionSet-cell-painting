@@ -18,7 +18,6 @@ from data_loader import dmso_taxol_ProfileBag
 import torch.nn.functional as F
 import torch.optim as optim
 
-
 def train(epoch, loader, model, opt, verbose_idx):
     model.train()
     train_loss = 0.

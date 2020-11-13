@@ -63,7 +63,7 @@ class FullDeepSet(nn.Module):
         x = self.dec(x)
         return x, torch.ge(x, self.thres)
     
-    
+          
 class profile_AttSet(nn.Module):
     def __init__(self, input_feature, thres = 0.5):
         super(profile_AttSet, self).__init__()
@@ -91,15 +91,15 @@ class profile_AttSet(nn.Module):
         )
     def forward(self, x):
         H = x.squeeze(0)
-        H = H.view(-1, self.input_feature)
         H = self.feature_extractor_part2(H)  # NxL
         
         A = self.attention(H)  # NxK
-        A = torch.transpose(A, 1, 0)  # KxN
+        A = torch.transpose(A, 2, 1)  # KxN
         A = F.softmax(A, dim=1)  # softmax over N
-        M = torch.mm(A, H)  # KxL
+        M = torch.bmm(A, H)  # KxL
 
         Y_prob = self.classifier(M)
+        Y_prob = Y_prob.squeeze(2)
         Y_hat = torch.ge(Y_prob, self.thres).float()
         
         return Y_prob, Y_hat#, A
