@@ -15,17 +15,20 @@ from torch.autograd import Variable
 from data_loader import data_label_split
 from data_loader import generate_data_set
 from data_loader import dmso_taxol_ProfileBag
+from data_loader import data_standardization
 import torch.nn.functional as F
 import torch.optim as optim
+
 
 def train(epoch, loader, model, opt, verbose_idx):
     model.train()
     train_loss = 0.
     train_error = 0.
-    for batch_idx, (data, label) in enumerate(loader):
-        bag_label = label[0]
+    for batch_idx, (data, bag_label) in enumerate(loader):
+        data, bag_label = data.squeeze(0), bag_label.squeeze(0)
         data, bag_label = data.float().cuda(), bag_label.cuda()
         data, bag_label = Variable(data), Variable(bag_label)
+
 
         # reset gradients
         opt.zero_grad()
@@ -47,6 +50,7 @@ def train(epoch, loader, model, opt, verbose_idx):
         print('Epoch: {}, Loss: {:.4f}, Train error: {:.4f}'.format(epoch, train_loss.item(), train_error))
 #     return(train_loss, train_error)
     
+
 def test(model, loader):
     model.eval()
     pred_score_control = []
@@ -54,22 +58,24 @@ def test(model, loader):
     acc_control = []
     acc_treat = []
     
-    for batch_idx, (data, label) in enumerate(loader): 
-        bag_label = label[0]
-        data, bag_label = data.float().cuda(), bag_label.cuda()
+    for batch_idx, (data, bag_label) in enumerate(loader): 
+        data, bag_label = data.squeeze(0), bag_label.squeeze(0)
+        data, bag_label = data.float().cuda(), bag_label.view(-1).cuda()
         y_prob, y_hat = model(data)
-
-        if int(bag_label.item()) == 0:
-            pred_score_control.append(y_prob.cpu().float().item())
-            acc_control.append(y_hat.float().eq(bag_label).cpu().float().mean().item())
-        else:
-            pred_score_treat.append(y_prob.cpu().float().item())
-            acc_treat.append(y_hat.float().eq(bag_label).cpu().float().mean().item())
+        
+        for i in range(len(bag_label)):
+            if int(bag_label[i].item()) == 0:
+                pred_score_control.append(y_prob[i].cpu().float().item())
+                acc_control.append(y_hat[i].float().eq(bag_label[i]).cpu().float().mean().item())
+            else:
+                pred_score_treat.append(y_prob[i].cpu().float().item())
+                acc_treat.append(y_hat[i].float().eq(bag_label[i]).cpu().float().mean().item())
     print("Control accuracy:%.3f, Treat accuracy:%.3f, overally accuray:%.3f" %(np.mean(acc_control),np.mean(acc_treat),np.mean(acc_control+acc_treat)))
     return acc_control, acc_treat, pred_score_control, pred_score_treat
 
+
 def mini_noise_signal_cv(start, end, data, num_bag, bag_size_mean, bag_size_std, 
-                         treatment, control, model, optimizer, splits, epochs):
+                         treatment, control, batch_size, model, optimizer, splits, epochs):
     dic = {}
     # Set different percentage of treatment v.s. control 
     for j in tqdm(range(start, end, 5), desc = "training at different percent"):
@@ -83,14 +89,14 @@ def mini_noise_signal_cv(start, end, data, num_bag, bag_size_mean, bag_size_std,
         # Stratified K fold 
         skf = StratifiedKFold(n_splits = splits)
         for i, (train_index, test_index) in tqdm(enumerate(skf.split(X, y)), desc="%d fold cross validation"%splits):
-            X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+            X_train, X_test = data_standardization(X.iloc[train_index]), data_standardization(X.iloc[test_index])
             y_train, y_test = y.iloc[train_index], y.iloc[test_index]  
             X_train = pd.concat([X_train, y_train], axis=1, sort=False)
             X_test = pd.concat([X_test, y_test], axis=1, sort=False)
 
             # Redefine dataloader and train model at each fold
-            train_dataset = dmso_taxol_ProfileBag(X_train, int(num_bag*(splits-1)/splits), bag_size_mean, bag_size_std, j/100, treatment, control, 0.5)
-            valida_dataset = dmso_taxol_ProfileBag(X_test, int(num_bag/splits), bag_size_mean, bag_size_std, j/100, treatment, control, 0.5)
+            train_dataset = dmso_taxol_ProfileBag(X_train, int(num_bag*(splits-1)/splits), bag_size_mean, bag_size_std, j/100, treatment, control, batch_size, 0.5, True)
+            valida_dataset = dmso_taxol_ProfileBag(X_test, int(num_bag/splits), bag_size_mean, bag_size_std, j/100, treatment, control, batch_size, 0.5)
             train_loader = D.DataLoader(train_dataset, batch_size=1, shuffle=True)
             valida_loader = D.DataLoader(valida_dataset, batch_size=1, shuffle=True)
             # Start training 
@@ -110,10 +116,6 @@ def mini_noise_signal_cv(start, end, data, num_bag, bag_size_mean, bag_size_std,
                           np.mean(pred_score_control_list),np.std(pred_score_control_list),
                           np.mean(pred_score_treat_list), np.std(pred_score_treat_list)]
         return dic
-# (mean_control_accuracy, std_control_accuracy, 
-#             mean_treat_accuracy, std_treat_accuracy, 
-#             mean_pred_score_control, std_pred_score_control,
-#             mean_pred_score_treatment, std_pred_score_treatment)
 
 
 if __name__=='__main__':

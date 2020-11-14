@@ -142,7 +142,7 @@ def train(size, data, model, verbose, parallel = True, bag_perc = 0.5):
     results = pd.DataFrame.from_dict(results, orient = 'index')
     
     
-    results.columns = ["mean_total_accuracy", "std_total_accuracy",
+    results.columns = ["mean_accuracy", "std_accuracy",
                 "mean_pred_score_control", "std_pred_score_control",
                 "mean_pred_score_treatment", "std_pred_score_treatment"]
     

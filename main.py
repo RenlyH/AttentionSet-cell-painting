@@ -43,7 +43,7 @@ parser.add_argument('--var_bag_length', type=int, default=10, metavar='VL',
                     help='variance of bag length')
 parser.add_argument('--num_bags_train', type=int, default=60, metavar='NTrain',
                     help='number of batches in dataset')
-parser.add_argument('--batch_size', type=int, default=8, help='Number of batches')
+parser.add_argument('--batch_size', type=int, default=10, help='Number of batches')
 
 
 parser.add_argument('--seed', type=int, default=1, metavar='S',
@@ -97,10 +97,10 @@ for i in range(args.start, args.end, 5):
                 "mean_pred_score_treatment", "std_pred_score_treatment"]
 
     
-#     if os.path.exists("attset_%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size)):
-#         results.to_csv("attset_%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size), mode='a', header=False)
+#     if os.path.exists("deepset_att%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size)):
+#         results.to_csv("deepset_att%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size), mode='a', header=False)
 #     else:
-#         results.to_csv("attset_%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size))
+#         results.to_csv("deepset_att%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size))
         
 
     if os.path.exists("deepset_%s%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.pool, args.thres, args.num_bags_train,args.batch_size, args.mean_bag_length, feature_size)):

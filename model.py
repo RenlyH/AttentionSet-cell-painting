@@ -39,9 +39,9 @@ class FullDeepSet(nn.Module):
     def __init__(self, pool = "mean", thres = 0.5):
         super().__init__()
         self.enc = nn.Sequential(
-            nn.Linear(in_features=481, out_features=256),
+            nn.Linear(in_features=481, out_features=64),
             nn.ReLU(),
-            nn.Linear(in_features=256, out_features=64),
+#             nn.Linear(in_features=256, out_features=64),
         )
         self.dec = nn.Sequential(
             nn.Linear(in_features=64, out_features=1),
@@ -69,8 +69,8 @@ class profile_AttSet(nn.Module):
         super(profile_AttSet, self).__init__()
         
         self.input_feature = input_feature
-        self.L = 300
-        self.D = 128
+        self.L = 80#230
+        self.D = 36#128
         self.K = 1
         self.thres = thres
 
