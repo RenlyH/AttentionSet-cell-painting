@@ -27,11 +27,10 @@ How to Use
 
 `base_exp.py`: Baseline model for noise-signal mixture experiment. 
 
-`main.py`: Trains a small CNN with the Adam optimization algorithm.
-The training takes 20 epochs. Last, the accuracy and loss of the model on the test set is computed.
-In addition, a subset of the bags labels and instance labels are printed.
+`set_experiment.py`: Prediction based on set for noise-signal mixture experiment.
 
-`model.py`: The model is a modified LeNet-5, see <http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf>.
-The Attention-based MIL pooling is located before the last layer of the model.
-The objective function is the negative log-likelihood of the Bernoulli distribution.
+`model.py`: It consists of DeepSet model and AttentionSet model for a batch of profile input. 
+The AttentionSet pooling method is located before the last layer of the model.
 
+`main.py`: Trains a small DeepSet model with the Adam optimization algorithm.
+The training takes 40 epochs. Last, the accuracy and loss of the model on the test set is computed.

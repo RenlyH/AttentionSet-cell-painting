@@ -20,7 +20,7 @@ import torch.utils.data as D
 import torch.nn as nn
 import torch.optim as optim
 
-torch.cuda.set_device(0)
+torch.cuda.set_device(1)
 
 
 # Training settings
