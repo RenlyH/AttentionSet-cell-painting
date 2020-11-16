@@ -19,7 +19,7 @@ Tested on both CPU and GPU.
 Content
 --------
 
-The code can be used to run the Noise-signal mixture experiment.
+The code can be used to run the Noise-signal mixture experiment with baseline model and Set-based model.
 
 How to Use
 ----------
