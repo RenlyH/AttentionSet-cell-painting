@@ -29,7 +29,7 @@ parser.add_argument('--start', type=int, default=5, metavar='s',
                     help='start percentage (default: 5)')
 parser.add_argument('--end', type=int, default=96, metavar='n',
                     help='end percentage (default: 96)')
-parser.add_argument('--epochs', type=int, default=40, metavar='N',
+parser.add_argument('--epochs', type=int, default=50, metavar='N',
                     help='number of epochs to train (default: 30)')
 parser.add_argument('--splits', type=int, default=5, metavar='k',
                     help='Total splits for K-fold cross validation')
@@ -72,8 +72,8 @@ data = drop_NA_data
     
 for i in range(args.start, args.end, 5):
     # define model
-    model = FullDeepSet(args.pool, args.thres)
-#     model = profile_AttSet(481,args.thres)
+#    model = FullDeepSet(args.pool, args.thres)
+     model = profile_AttSet(481, args.thres)
     if args.cuda:
         model.cuda()
 
@@ -91,13 +91,13 @@ for i in range(args.start, args.end, 5):
                 "mean_pred_score_treatment", "std_pred_score_treatment"]
 
     
-#     if os.path.exists("deepset_att%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size)):
-#         results.to_csv("deepset_att%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size), mode='a', header=False)
-#     else:
-#         results.to_csv("deepset_att%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size))
+     if os.path.exists("deepset_att%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size)):
+         results.to_csv("deepset_att%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size), mode='a', header=False)
+     else:
+         results.to_csv("deepset_att%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size))
         
 
-    if os.path.exists("deepset_%s%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.pool, args.thres, args.num_bags_train,args.batch_size, args.mean_bag_length, feature_size)):
-        results.to_csv("deepset_%s%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.pool, args.thres, args.num_bags_train,args.batch_size, args.mean_bag_length, feature_size), mode='a', header=False)
-    else:
-        results.to_csv("deepset_%s%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.pool, args.thres, args.num_bags_train,args.batch_size, args.mean_bag_length, feature_size))
+#    if os.path.exists("deepset_%s%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.pool, args.thres, args.num_bags_train,args.batch_size, args.mean_bag_length, feature_size)):
+#        results.to_csv("deepset_%s%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.pool, args.thres, args.num_bags_train,args.batch_size, args.mean_bag_length, feature_size), mode='a', header=False)
+#    else:
+#        results.to_csv("deepset_%s%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.pool, args.thres, args.num_bags_train,args.batch_size, args.mean_bag_length, feature_size))

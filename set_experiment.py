@@ -78,7 +78,7 @@ def mini_noise_signal_cv(start, end, data, num_bag, bag_size_mean, bag_size_std,
                          treatment, control, batch_size, model, optimizer, splits, epochs):
     dic = {}
     # Set different percentage of treatment v.s. control 
-    for j in tqdm(range(start, end, 5), desc = "training at different percent"):
+    for j in range(start, end, 5):
         X, y = data_label_split(data)
         y = y["compound"]
 
@@ -88,7 +88,7 @@ def mini_noise_signal_cv(start, end, data, num_bag, bag_size_mean, bag_size_std,
         pred_score_treat_list = []
         # Stratified K fold 
         skf = StratifiedKFold(n_splits = splits)
-        for i, (train_index, test_index) in tqdm(enumerate(skf.split(X, y)), desc="%d fold cross validation"%splits):
+        for i, (train_index, test_index) in enumerate(skf.split(X, y)):
             X_train, X_test = data_standardization(X.iloc[train_index]), data_standardization(X.iloc[test_index])
             y_train, y_test = y.iloc[train_index], y.iloc[test_index]  
             X_train = pd.concat([X_train, y_train], axis=1, sort=False)
@@ -101,9 +101,10 @@ def mini_noise_signal_cv(start, end, data, num_bag, bag_size_mean, bag_size_std,
             valida_loader = D.DataLoader(valida_dataset, batch_size=1, shuffle=True)
             # Start training 
             for epoch in range(epochs):
-                train(epoch, train_loader, model, optimizer, 10)
+                print("Train, Percent:%d, Fold: %d, "%(j,i), end = "")
+                train(epoch, train_loader, model, optimizer, 1)
             # Conduct testing
-            print("At %dth fold testing: "%i, end="")
+            print("Test, Percent:%d, Fold:%d, "%(j,i), end = "")
             acc_control, acc_treat, pred_score_control, pred_score_treat = test(model, valida_loader)
             
             acc_control_list+=acc_control
