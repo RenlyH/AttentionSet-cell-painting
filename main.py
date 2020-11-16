@@ -20,7 +20,7 @@ import torch.utils.data as D
 import torch.nn as nn
 import torch.optim as optim
 
-torch.cuda.set_device(1)
+torch.cuda.set_device(3)
 
 
 # Training settings
@@ -29,7 +29,7 @@ parser.add_argument('--start', type=int, default=5, metavar='s',
                     help='start percentage (default: 5)')
 parser.add_argument('--end', type=int, default=96, metavar='n',
                     help='end percentage (default: 96)')
-parser.add_argument('--epochs', type=int, default=30, metavar='N',
+parser.add_argument('--epochs', type=int, default=35, metavar='N',
                     help='number of epochs to train (default: 30)')
 parser.add_argument('--splits', type=int, default=5, metavar='k',
                     help='Total splits for K-fold cross validation')
@@ -37,16 +37,16 @@ parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                     help='learning rate (default: 0.001)')
 parser.add_argument('--reg', type=float, default=10e-5, metavar='R',
                     help='weight decay')
-parser.add_argument('--mean_bag_length', type=int, default=100, metavar='ML',
+parser.add_argument('--mean_bag_length', type=int, default=150, metavar='ML',
                     help='average bag length')
 parser.add_argument('--var_bag_length', type=int, default=10, metavar='VL',
                     help='variance of bag length')
 parser.add_argument('--num_bags_train', type=int, default=60, metavar='NTrain',
                     help='number of batches in dataset')
-parser.add_argument('--batch_size', type=int, default=10, help='Number of batches')
+parser.add_argument('--batch_size', type=int, default=20, help='Number of batches')
 
 
-parser.add_argument('--seed', type=int, default=1, metavar='S',
+parser.add_argument('--seed', type=int, default=10, metavar='S',
                     help='random seed (default: 1)')
 parser.add_argument('--no_cuda', action='store_true', default=False,
                     help='disables CUDA training')
@@ -64,13 +64,9 @@ if args.cuda:
 
 
 
-file_name = "week1_full_data.csv"#"mini_moa_data_drop_NA.csv"
+file_name = "moa_data_drop_NA.csv" # "week1_full_data.csv"
 drop_NA_data = pd.read_csv(file_name, index_col=0)
 print('Data loaded')
-# sf_drop_NA_data = drop_NA_data[["compound", "concentration",
-#                                 "moa", "row ID", "Iteration (#2)", "COND",
-#                                "AreaShape_Area_Nuclei", "AreaShape_Compactness_Nuclei"]]
-# data = data_normalization(drop_NA_data)
 data = drop_NA_data
 
 
@@ -79,7 +75,8 @@ print(args)
     
 for i in range(args.start, args.end, 5):
     # define model
-    model = FullDeepSet(args.pool, args.thres)#profile_AttSet(481,args.thres)
+    model = FullDeepSet(args.pool, args.thres)
+#     model = profile_AttSet(481,args.thres)
     if args.cuda:
         model.cuda()
 
