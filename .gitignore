@@ -9,4 +9,5 @@ moa_data_drop_NA.csv
 /deepset_result_Nov1
 /code_not_using
 nohup.out
-/Ljosa-profile/confu.png
+/Ljosa-profile
+code_format.sh

@@ -34,3 +34,6 @@ The AttentionSet pooling method is located before the last layer of the model.
 
 `main.py`: Trains a small DeepSet model with the Adam optimization algorithm.
 The training takes 40 epochs. Last, the accuracy and loss of the model on the test set is computed.
+
+`main_att.py`: Trains a small DeepSet model with the Adam optimization algorithm.
+The training takes 40 epochs. Last, the accuracy and loss of the model on the test set is computed.
