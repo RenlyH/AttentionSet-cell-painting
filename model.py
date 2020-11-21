@@ -4,10 +4,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class SmallDeepSet(nn.Module):
-    def __init__(self, pool = "mean", thres = 0.5):
+    def __init__(self, input_features, pool = "mean", thres = 0.5):
         super().__init__()
+        self.input_features = input_features
         self.enc = nn.Sequential(
-            nn.Linear(in_features=2, out_features=16),
+            nn.Linear(in_features=self.input_features, out_features=16),
             nn.ReLU(),
             nn.Linear(in_features=16, out_features=32),
             nn.ReLU(),
@@ -36,10 +37,11 @@ class SmallDeepSet(nn.Module):
         return x, torch.ge(x, self.thres)
     
 class FullDeepSet(nn.Module):
-    def __init__(self, pool = "mean", thres = 0.5):
+    def __init__(self,input_features, pool = "mean", thres = 0.5):
         super().__init__()
+        self.input_feature = input_features
         self.enc = nn.Sequential(
-            nn.Linear(in_features=481, out_features=64),
+            nn.Linear(in_features=self.input_feature, out_features=64),
             nn.ReLU(),
 #             nn.Linear(in_features=256, out_features=64),
         )
@@ -65,10 +67,11 @@ class FullDeepSet(nn.Module):
     
           
 class profile_AttSet(nn.Module):
-    def __init__(self, input_feature, thres = 0.5):
+    def __init__(self, input_feature, pool = "att", thres = 0.5):
         super(profile_AttSet, self).__init__()
         
         self.input_feature = input_feature
+        self.pool = pool
         self.L = 80#230
         self.D = 36#128
         self.K = 1

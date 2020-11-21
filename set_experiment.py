@@ -16,6 +16,7 @@ from data_loader import data_label_split
 from data_loader import generate_data_set
 from data_loader import dmso_taxol_ProfileBag
 from data_loader import data_standardization
+#from main import initialize_model
 import torch.nn.functional as F
 import torch.optim as optim
 
@@ -35,6 +36,9 @@ def train(epoch, loader, model, opt, verbose_idx):
         # calculate loss and metrics
         y_prob, y_hat = model(data)
         loss = nn.BCELoss()(y_prob, bag_label)
+        if loss > 49:
+            print("loss:", loss)
+            print(y_prob,bag_label)
         train_loss += loss.data.cpu()
         error = 1-y_hat.float().eq(bag_label).cpu().float().mean().item()
         train_error += error
@@ -48,7 +52,7 @@ def train(epoch, loader, model, opt, verbose_idx):
     train_error /= len(loader)
     if epoch%verbose_idx==0:
         print('Epoch: {}, Loss: {:.4f}, Train error: {:.4f}'.format(epoch, train_loss.item(), train_error))
-#     return(train_loss, train_error)
+    return(train_loss.item(), train_error)
     
 
 def test(model, loader):
@@ -75,7 +79,7 @@ def test(model, loader):
 
 
 def mini_noise_signal_cv(start, end, data, num_bag, bag_size_mean, bag_size_std, 
-                         treatment, control, batch_size, model, optimizer, splits, epochs):
+                         treatment, control, batch_size, model, optimizer_lr, optimizer_wd, splits, epochs):
     dic = {}
     # Set different percentage of treatment v.s. control 
     for j in range(start, end, 5):
@@ -100,17 +104,43 @@ def mini_noise_signal_cv(start, end, data, num_bag, bag_size_mean, bag_size_std,
             train_loader = D.DataLoader(train_dataset, batch_size=1, shuffle=True)
             valida_loader = D.DataLoader(valida_dataset, batch_size=1, shuffle=True)
             # Start training 
-            for epoch in range(epochs):
-                print("Train, Percent:%d, Fold: %d, "%(j,i), end = "")
-                train(epoch, train_loader, model, optimizer, 1)
-            # Conduct testing
-            print("Test, Percent:%d, Fold:%d, "%(j,i), end = "")
-            acc_control, acc_treat, pred_score_control, pred_score_treat = test(model, valida_loader)
+            model.__init__(model.input_feature,model.pool,model.thres)
+            model.cuda()
+            optimizer = optim.Adam(model.parameters(), lr=optimizer_lr, betas=(0.9, 0.999), weight_decay=optimizer_wd)
             
-            acc_control_list+=acc_control
-            acc_treat_list+=acc_treat
-            pred_score_control_list+=pred_score_control
-            pred_score_treat_list+=pred_score_treat
+            minimum_error = float("inf")
+            early_stop = []
+            for epoch in range(epochs):
+                epoch_result = []
+                print("Train, Percent:%d, Fold: %d, "%(j,i), end = "")
+                train_loss, train_error = train(epoch, train_loader, model, optimizer, 1)
+                if train_loss >= 49:
+                    X_train.to_csv("bag_perc%d_fold%d.csv"%(j,i))
+                    break
+                epoch_result.append(train_loss)
+                epoch_result.append(train_error)
+            # Conduct testing
+                print("Test, Percent:%d, Fold:%d, "%(j,i), end = "")
+                acc_control, acc_treat, pred_score_control, pred_score_treat = test(model, valida_loader)
+                if 1-np.mean(acc_control+acc_treat) < minimum_error:
+                    minimum_error = 1-np.mean(acc_control+acc_treat)
+                    best_result = (acc_control,acc_treat,pred_score_control,pred_score_treat)
+
+                epoch_result.append(1-np.mean(acc_control))
+                epoch_result.append(1-np.mean(acc_treat))
+                if len(early_stop) < 5:
+                    early_stop.append(epoch_result)
+                else:
+                    early_stop.append(epoch_result)
+                    early_stop.pop(0)
+             # Stop if loss and training+testing error is close to 0 in 5 consecutive epochs
+                if np.mean(early_stop) <= 1e-6:
+                    break
+            acc_control_list+=best_result[0]
+            acc_treat_list+=best_result[1]
+            pred_score_control_list+=best_result[2]
+            pred_score_treat_list+=best_result[3]
+            print(np.mean(best_result[0]+best_result[1]))
         dic[j/100] = [np.mean(acc_control_list+acc_treat_list), np.std(acc_control_list+acc_treat_list),
                           np.mean(acc_control_list), np.std(acc_control_list), 
                           np.mean(acc_treat_list), np.std(acc_treat_list),

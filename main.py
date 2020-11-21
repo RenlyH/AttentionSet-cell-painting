@@ -62,6 +62,13 @@ if args.cuda:
     torch.cuda.manual_seed(args.seed)
     print('GPU is ON! with GPU %s'%torch.cuda.current_device())
 
+
+def initialize_model(model,opt):
+    model.__init__(model.input_feature,model.pool,model.thres)
+    opt = optim.Adam(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=args.reg)
+    return opt
+
+
 os.chdir("/bcm-share-2_3/michigan/att_pooling")
 
 file_name = "moa_data_drop_NA.csv" # "week1_full_data.csv"
@@ -69,18 +76,18 @@ drop_NA_data = pd.read_csv(file_name, index_col=0)
 print('Data loaded')
 data = drop_NA_data
 
-    
+feature_size = len(data_label_split(data)[0].columns)   
 for i in range(args.start, args.end, 5):
     # define model
-    model = FullDeepSet(args.pool, args.thres)
+    model = FullDeepSet(feature_size,args.pool, args.thres)
 #     model = profile_AttSet(481,args.thres)
     if args.cuda:
         model.cuda()
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=args.reg)
 
-    results = mini_noise_signal_cv(i , i + 1, data, args.num_bags_train, args.mean_bag_length, args.var_bag_length, "taxol", "DMSO", args.batch_size, model, optimizer, args.splits, args.epochs)
-    feature_size = len(data_label_split(data)[0].columns)
+    results = mini_noise_signal_cv(i , i + 1, data, args.num_bags_train, args.mean_bag_length, args.var_bag_length, "taxol", "DMSO", args.batch_size, model, args.lr, args.reg, args.splits, args.epochs)
+    #feature_size = len(data_label_split(data)[0].columns)
 
     results = pd.DataFrame.from_dict(results, orient = 'index')
 

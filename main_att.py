@@ -64,7 +64,7 @@ if args.cuda:
 
 os.chdir("/bcm-share-2_3/michigan/att_pooling")
 
-file_name = "moa_data_drop_NA.csv" # "week1_full_data.csv"
+file_name =  "week1_full_data.csv"#"moa_data_drop_NA.csv" # "week1_full_data.csv"
 drop_NA_data = pd.read_csv(file_name, index_col=0)
 print('Data loaded')
 data = drop_NA_data
@@ -72,14 +72,13 @@ data = drop_NA_data
     
 for i in range(args.start, args.end, 5):
     # define model
-#    model = FullDeepSet(args.pool, args.thres)
-     model = profile_AttSet(481, args.thres)
+    model = profile_AttSet(481,"att", args.thres)
     if args.cuda:
         model.cuda()
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=args.reg)
 
-    results = mini_noise_signal_cv(i , i + 1, data, args.num_bags_train, args.mean_bag_length, args.var_bag_length, "taxol", "DMSO", args.batch_size, model, optimizer, args.splits, args.epochs)
+    results = mini_noise_signal_cv(i , i + 1, data, args.num_bags_train, args.mean_bag_length, args.var_bag_length, "taxol", "DMSO", args.batch_size, model, args.lr, args.reg, args.splits, args.epochs)
     feature_size = len(data_label_split(data)[0].columns)
 
     results = pd.DataFrame.from_dict(results, orient = 'index')
@@ -91,9 +90,9 @@ for i in range(args.start, args.end, 5):
                 "mean_pred_score_treatment", "std_pred_score_treatment"]
 
     
-     if os.path.exists("deepset_att%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size)):
+    if os.path.exists("deepset_att%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size)):
          results.to_csv("deepset_att%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size), mode='a', header=False)
-     else:
+    else:
          results.to_csv("deepset_att%.1f_bags%d*%d_bagsize%d_feature%d.csv"%(args.thres, args.num_bags_train, args.batch_size, args.mean_bag_length, feature_size))
         
 

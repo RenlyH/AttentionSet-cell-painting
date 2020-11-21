@@ -1,0 +1,12 @@
+.ipynb_checkpoints
+__pycache__
+moa_data.csv
+moa_data_drop_NA.csv
+*.csv
+*.png
+/result_Nov14
+/attset_Nov10
+/deepset_result_Nov1
+/code_not_using
+nohup.out
+/Ljosa-profile/confu.png
