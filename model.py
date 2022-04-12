@@ -5,7 +5,7 @@ import torch.utils.data as D
 
 
 class SmallDeepSet(nn.Module):
-    def __init__(self, input_features, pool="mean", thres=0.5):
+    def __init__(self, input_features, pool="mean", thres=0.5, reg = False):
         super().__init__()
         self.input_features = input_features
         self.enc = nn.Sequential(
@@ -23,7 +23,8 @@ class SmallDeepSet(nn.Module):
         )
         self.pool = pool
         self.thres = thres
-
+        self.reg = reg
+        
     def forward(self, x):
         x = self.enc(x)
         if self.pool == "max":
@@ -34,7 +35,13 @@ class SmallDeepSet(nn.Module):
             x = x.sum(dim=1)
         elif self.pool == "min":
             x = x.min(dim=1)[0]
-        x = self.dec(x)
+        if self.reg:
+            x = nn.Sequential(
+            nn.Linear(in_features=64, out_features=32),
+            nn.ReLU(),
+            nn.Linear(in_features=32, out_features=1),)
+        else:
+            x = self.dec(x)
         return x, torch.ge(x, self.thres)
 
 
@@ -73,7 +80,7 @@ class profile_AttSet(nn.Module):
 
         self.input_feature = input_feature
         self.pool = pool
-        self.L = 80  # 230
+        self.L = 64  # 230
         self.D = 36  # 128
         self.K = 1
         self.thres = thres

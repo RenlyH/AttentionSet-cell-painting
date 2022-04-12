@@ -174,7 +174,6 @@ class dmso_taxol_ProfileBag(D.Dataset):
         for i in index_shuf:
             X_shuf.append(X[i])
             y_shuf.append(y[i])
-
         return torch.stack(X_shuf, dim=0), torch.stack(y_shuf, dim=0)
 
     def __len__(self):
