@@ -19,13 +19,14 @@ from data_loader import (
 from model import SmallDeepSet
 
 
-def train(epoch, loader, model, opt, verbose_idx):
+def train(args, epoch, loader, model, opt, verbose_idx):
     model.train()
     train_loss = 0.0
     train_error = 0.0
     for batch_idx, (data, bag_label) in enumerate(loader):
-        data, bag_label = data.squeeze(0), bag_label.squeeze(0)
-        data, bag_label = data.float().cuda(), bag_label.cuda()
+        data, bag_label = data.squeeze(0).float(), bag_label.squeeze(0)
+        if args.cuda:
+            data, bag_label = data.cuda(), bag_label.cuda()
         data, bag_label = Variable(data), Variable(bag_label)
 
         # reset gradients
@@ -54,7 +55,7 @@ def train(epoch, loader, model, opt, verbose_idx):
     return (train_loss.item(), train_error)
 
 
-def test(model, loader):
+def test(args, model, loader):
     model.eval()
     pred_score_control = []
     pred_score_treat = []
@@ -62,8 +63,9 @@ def test(model, loader):
     acc_treat = []
 
     for batch_idx, (data, bag_label) in enumerate(loader):
-        data, bag_label = data.squeeze(0), bag_label.squeeze(0)
-        data, bag_label = data.float().cuda(), bag_label.view(-1).cuda()
+        data, bag_label = data.squeeze(0).float(), bag_label.squeeze(0).view(-1)
+        if args.cuda:
+            data, bag_label = data.cuda(), bag_label.cuda()
         y_prob, y_hat = model(data)
 
         for i in range(len(bag_label)):
@@ -78,7 +80,7 @@ def test(model, loader):
                     y_hat[i].float().eq(bag_label[i]).cpu().float().mean().item()
                 )
     print(
-        "Control accuracy:%.3f, Treat accuracy:%.3f, overally accuray:%.3f"
+        "Control accuracy:%.3f, Treat accuracy:%.3f, overall accuracy:%.3f"
         % (np.mean(acc_control), np.mean(acc_treat), np.mean(acc_control + acc_treat))
     )
     return acc_control, acc_treat, pred_score_control, pred_score_treat
@@ -88,17 +90,10 @@ def mini_noise_signal_cv(
     start,
     end,
     data,
-    num_bag,
-    bag_size_mean,
-    bag_size_std,
     treatment,
     control,
-    batch_size,
     model,
-    optimizer_lr,
-    optimizer_wd,
-    splits,
-    epochs,
+    args
 ):
     dic = {}
     # Set different percentage of treatment v.s. control
@@ -111,7 +106,7 @@ def mini_noise_signal_cv(
         pred_score_control_list = []
         pred_score_treat_list = []
         # Stratified K fold
-        skf = StratifiedKFold(n_splits=splits)
+        skf = StratifiedKFold(n_splits=args.splits)
         for i, (train_index, test_index) in enumerate(skf.split(X, y)):
             X_train, X_test = (
                 data_standardization(X.iloc[train_index]),
@@ -124,56 +119,57 @@ def mini_noise_signal_cv(
             # Redefine dataloader and train model at each fold
             train_dataset = dmso_taxol_ProfileBag(
                 X_train,
-                int(num_bag * (splits - 1) / splits),
-                bag_size_mean,
-                bag_size_std,
+                int(args.num_bags_train * (args.splits - 1) / args.splits),
+                args.mean_bag_length,
+                args.var_bag_length,
                 j / 100,
                 treatment,
                 control,
-                batch_size,
+                args.batch_size,
                 0.5,
                 True,
             )
             valida_dataset = dmso_taxol_ProfileBag(
                 X_test,
-                int(num_bag / splits),
-                bag_size_mean,
-                bag_size_std,
+                int(args.num_bags_train / args.splits),
+                args.mean_bag_length,
+                args.var_bag_length,
                 j / 100,
                 treatment,
                 control,
-                batch_size,
+                args.batch_size,
                 0.5,
             )
             train_loader = D.DataLoader(train_dataset, batch_size=1, shuffle=True)
             valida_loader = D.DataLoader(valida_dataset, batch_size=1, shuffle=True)
             # Start training
             model.__init__(model.input_feature, model.pool, model.thres)
-            model.cuda()
+            if args.cuda:
+                model.cuda()
             optimizer = optim.Adam(
                 model.parameters(),
-                lr=optimizer_lr,
+                lr=args.lr,
                 betas=(0.9, 0.999),
-                weight_decay=optimizer_wd,
+                weight_decay=args.reg,
             )
 
             minimum_error = float("inf")
             early_stop = []
-            for epoch in range(epochs):
+            for epoch in range(args.epochs):
                 epoch_result = []
                 print("Train, Percent:%d, Fold: %d, " % (j, i), end="")
                 train_loss, train_error = train(
-                    epoch, train_loader, model, optimizer, 1
+                    args, epoch, train_loader, model, optimizer, 1
                 )
-                if train_loss >= 49:
-                    X_train.to_csv("bag_perc%d_fold%d.csv" % (j, i))
-                    break
+#                 if train_loss >= 49:
+#                     X_train.to_csv("bag_perc%d_fold%d.csv" % (j, i))
+#                     break
                 epoch_result.append(train_loss)
                 epoch_result.append(train_error)
                 # Conduct testing
                 print("Test, Percent:%d, Fold:%d, " % (j, i), end="")
                 acc_control, acc_treat, pred_score_control, pred_score_treat = test(
-                    model, valida_loader
+                    args, model, valida_loader
                 )
                 if 1 - np.mean(acc_control + acc_treat) < minimum_error:
                     minimum_error = 1 - np.mean(acc_control + acc_treat)

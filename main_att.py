@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as D
 
-from data_loader import data_label_split, dmso_taxol_ProfileBag, generate_data_set
+from data_loader import data_label_split, dmso_taxol_ProfileBag, generate_data_set, normalize_by_group
 from model import FullDeepSet, SmallDeepSet, profile_AttSet
 from set_experiment import mini_noise_signal_cv, test, train
 
@@ -89,17 +89,21 @@ if args.cuda:
     torch.cuda.manual_seed(args.seed)
     print("GPU is ON! with GPU %s" % torch.cuda.current_device())
 
-os.chdir("/bcm-share-2_3/michigan/att_pooling")
-
-file_name = "moa_data_drop_NA.csv"  # "week1_full_data.csv"
-drop_NA_data = pd.read_csv(file_name, index_col=0)
-print("Data loaded")
-data = drop_NA_data
 
 
+data_path = 'moa_data_drop_NA.csv'
+drop_NA_data=pd.read_csv(data_path, index_col=0)
+X, y = data_label_split(drop_NA_data)
+X['Metadata_PlateID_Nuclei'] = drop_NA_data['Metadata_PlateID_Nuclei'].tolist()
+X = normalize_by_group(X,'Metadata_PlateID_Nuclei')
+X.dropna('columns',inplace=True)
+X['compound'] = drop_NA_data['compound'].tolist()
+data = X
+
+feature_size = len(data_label_split(data)[0].columns)
 for i in range(args.start, args.end, 5):
     # define model
-    model = profile_AttSet(481, "att", args.thres)
+    model = profile_AttSet(feature_size, "att", args.thres)
     if args.cuda:
         model.cuda()
 

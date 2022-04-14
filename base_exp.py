@@ -12,7 +12,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import LabelEncoder
 from tqdm import tqdm
 
-from data_loader import data_label_split, data_standardization, generate_data_set
+from data_loader import data_label_split, data_standardization, generate_data_set, normalize_by_group
 
 
 """
@@ -241,13 +241,17 @@ def train(size, data, model, verbose, parallel=True, bag_perc=0.5):
 
 
 if __name__ == "__main__":
-    drop_NA_data = pd.read_csv("week1_full_data.csv", index_col=0)
-    print("data loaded")
-    #     sf_drop_NA_data = drop_NA_data[["compound", "concentration",
-    #                                 "moa", "row ID", "Iteration (#2)", "COND",
-    #                                "AreaShape_Area_Nuclei"]]
-    model = MLPClassifier(
-        solver="adam", max_iter=1000
-    )  # KNeighborsClassifier(30)#LogisticRegression(max_iter = 10000, solver = "saga", n_jobs = -1)# RandomForestClassifier(min_samples_split=50, random_state=0)
+    data_path = 'moa_data_drop_NA.csv'
+    drop_NA_data=pd.read_csv(data_path, index_col=0)
+    X, y = data_label_split(drop_NA_data)
+    X['Metadata_PlateID_Nuclei'] = drop_NA_data['Metadata_PlateID_Nuclei'].tolist()
+    X = normalize_by_group(X,'Metadata_PlateID_Nuclei')
+    X.dropna('columns',inplace=True)
+    X['compound'] = drop_NA_data['compound'].tolist()
 
-    train(50000, drop_NA_data, model, 0)
+    model = MLPClassifier(solver="adam", max_iter=1000)  
+#     model = KNeighborsClassifier(30)
+#     model = LogisticRegression(max_iter = 10000, solver = "saga", n_jobs = -1)
+#     model = RandomForestClassifier(min_samples_split=50, random_state=0)
+    print('using model %s, data %s' % (str(model).split("(")[0], data_path))
+    train(500, X, model, 0)

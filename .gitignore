@@ -4,6 +4,9 @@ moa_data.csv
 moa_data_drop_NA.csv
 *.csv
 *.png
+*.out
+*.sh
+/res
 /result_Nov14
 /attset_Nov10
 /deepset_result_Nov1

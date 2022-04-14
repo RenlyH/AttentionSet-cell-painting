@@ -8,6 +8,16 @@ import torch.utils.data as D
 from sklearn.preprocessing import StandardScaler, normalize
 
 
+def normalize_by_group(df, by):
+    groups = df.groupby(by)
+    # computes group-wise mean/std,
+    # then auto broadcasts to size of group chunk
+    mean = groups.transform("mean")
+    std = groups.transform("std")
+    normalized = (df[mean.columns] - mean) / std
+    return normalized
+
+
 """
 Given pandas.DataFrame type data with rows as individual cells and columns as features.
 data must contain "compound", "concentration", "moa", "row ID"
