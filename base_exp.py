@@ -1,6 +1,6 @@
 import multiprocessing as mp
 import os
-
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -11,13 +11,22 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import LabelEncoder
 from tqdm import tqdm
-
-from data_loader import data_label_split, data_standardization, generate_data_set, normalize_by_group
+import datetime
+from data_loader import data_label_split, data_standardization, generate_data_set, normalize_by_group, use_nuclei_feature, use_nuclei_gran_feature
 
 
 """
 Conduct 19 different ML tasks on predicting treatment against control at cell-level. Percent of signal cells and noise ranges from 5% to 95%. At each percent, K-fold cross-validation is applied to measure the accuracy and Z' of each model.
 """
+
+def set_args():
+    parser = argparse.ArgumentParser(description="Cell mixture bags experiment baseline")
+    parser.add_argument("--bagsize", type=int, default=5, help="bagsize")
+    parser.add_argument("--use_nuclei", action="store_true", default=False, help="use nuclei features only")
+    parser.add_argument("--use_nuclei_gran", action="store_true", default=False, help="use nuclei granularity features only")
+    parser.add_argument("--data_path", type=str, default='moa_data_drop_NA.csv', help="data path")
+    parser.add_argument("--output_dir", type=str, default='result/')
+    return parser.parse_args()
 
 
 def mini_noise_signal_cv(
@@ -206,14 +215,14 @@ def multi_kfold_train(
     }
 
 
-def train(size, data, model, verbose, parallel=True, bag_perc=0.5):
+def train(args, data, model, verbose, parallel=True, bag_perc=0.5):
     if parallel:
         results = multi_mini_noise_signal_cv(
-            size, data, "taxol", "DMSO", model, 10, verbose, bag_perc
+            args.bagsize, data, "taxol", "DMSO", model, 10, verbose, bag_perc
         )
     else:
         results = mini_noise_signal_cv(
-            size, data, "taxol", "DMSO", model, 10, verbose, bag_perc
+            args.bagsize, data, "taxol", "DMSO", model, 10, verbose, bag_perc
         )
 
     results = pd.DataFrame.from_dict(results, orient="index")
@@ -229,29 +238,49 @@ def train(size, data, model, verbose, parallel=True, bag_perc=0.5):
 
     model_name = str(model).split("(")[0]
     feature_size = len(data_label_split(data)[0].columns)
-
-    if os.path.exists("%s_sample%s_feature%s.csv" % (model_name, size, feature_size)):
+    result_path = os.path.join(args.output_dir,"%s_sample%s_feature%s.csv" % (model_name, args.bagsize, feature_size))
+    if os.path.exists(result_path):
         results.to_csv(
-            "%s_sample%s_feature%s.csv" % (model_name, size, feature_size),
+            result_path,
             mode="a",
             header=False,
         )
     else:
-        results.to_csv("%s_sample%s_feature%s.csv" % (model_name, size, feature_size))
+        results.to_csv(result_path)
 
 
-if __name__ == "__main__":
-    data_path = 'moa_data_drop_NA.csv'
-    drop_NA_data=pd.read_csv(data_path, index_col=0)
+
+
+
+def main():
+    args = set_args()
+    time = datetime.datetime.now()
+    args.output_dir += time.strftime("%b%d/") 
+    os.makedirs(args.output_dir,exist_ok=True)
+    drop_NA_data=pd.read_csv(args.data_path, index_col=0)
     X, y = data_label_split(drop_NA_data)
+    if args.use_nuclei:
+        X = use_nuclei_feature(X)
+    elif args.use_nuclei_gran:
+        X = use_nuclei_gran_feature(X)
     X['Metadata_PlateID_Nuclei'] = drop_NA_data['Metadata_PlateID_Nuclei'].tolist()
     X = normalize_by_group(X,'Metadata_PlateID_Nuclei')
     X.dropna('columns',inplace=True)
     X['compound'] = drop_NA_data['compound'].tolist()
 
-    model = MLPClassifier(solver="adam", max_iter=1000)  
-#     model = KNeighborsClassifier(30)
-#     model = LogisticRegression(max_iter = 10000, solver = "saga", n_jobs = -1)
-#     model = RandomForestClassifier(min_samples_split=50, random_state=0)
-    print('using model %s, data %s' % (str(model).split("(")[0], data_path))
-    train(500, X, model, 0)
+    models = [KNeighborsClassifier(30),
+              LogisticRegression(max_iter = 1000, solver = "saga", n_jobs = -1),
+              RandomForestClassifier(min_samples_split=50, random_state=0),
+              MLPClassifier(solver="adam", max_iter=100)]
+    
+    envs = os.environ
+    if "SLURM_ARRAY_TASK_ID" in envs:
+        model = models[int(envs['SLURM_ARRAY_TASK_ID'])]
+    else:
+        model = models[0]
+    print('using model %s, data %s' % (str(model).split("(")[0], args.data_path))
+    train(args, X, model, 0)
+    
+    
+if __name__ == "__main__":
+    main()

@@ -8,6 +8,24 @@ import torch.utils.data as D
 from sklearn.preprocessing import StandardScaler, normalize
 
 
+def use_nuclei_feature(df):
+    columns = df.columns
+    features = []
+    for i in df.columns:
+        if 'Nuclei' in i:
+            features.append(i)
+    return df[features]
+
+
+def use_nuclei_gran_feature(df):
+    columns = df.columns
+    features = []
+    for i in df.columns:
+        if 'Granularity' in i and 'Nuclei' in i:
+            features.append(i)
+    return df[features]
+
+
 def normalize_by_group(df, by):
     groups = df.groupby(by)
     # computes group-wise mean/std,
